@@ -190,9 +190,9 @@ def case_metrics(records):
 def main():
     # 1. 실행 인자 설정 (하이퍼파라미터 및 파일 경로)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=Path, default=Path('datasets/processed'))
+    parser.add_argument('--data-csv', type=Path, required=True, help='split 컬럼이 포함된 CSV 파일 경로')
     parser.add_argument('--image-root', type=Path, default=Path('.'))
-    parser.add_argument('--class-map', type=Path, default=Path('class_to_idx.json'))
+    parser.add_argument('--class-map', type=Path, default=Path('config/class_to_idx.json'))
     parser.add_argument('--mode', choices=['image', 'multimodal'], default='image')
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--batch-size', type=int, default=16)
@@ -207,14 +207,17 @@ def main():
     seed_everything(args.seed)
     mapping = load_class_to_idx(args.class_map)
 
-    # 3. Train / Validation 데이터 불러오기
+    # 3. 데이터 불러오기
+    df = pd.read_csv(
+      args.data_csv,
+      dtype={'case_id': str},
+      keep_default_na=True
+      )
+
+    # Train / Validation 분리
     frames = {
-        s: pd.read_csv(
-            args.data_dir / f'{s}.csv',
-            dtype={'case_id': str},
-            keep_default_na=True
-        )
-        for s in ('train', 'val')
+      'train': df[df['split'] == 'train'].copy(),
+      'val': df[df['split'] == 'validation'].copy()
     }
     
     # 4. 데이터 유효성 검증
