@@ -17,7 +17,11 @@ import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_recall_fscore_support
+)
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
@@ -161,27 +165,99 @@ def run_epoch(model, loader, device, optimizer=None):
 # 동일 케이스의 이미지별 예측 확률을 평균 내어 최종 예측을 결정
 # 케이스 단위 Accuracy와 Macro F1을 계산
 # ========================================
-def case_metrics(records):
+def case_metrics(records, num_classes=33, evaluation="validation"):
+    """
+    케이스 단위 성능 평가
+
+    validation:
+        전체 33개 클래스 기준 Macro F1
+
+    test:
+        실제 Test 정답에 존재하는 클래스만 기준 Macro F1
+    """
     grouped = {}
 
-    # 1. 동일 케이스의 이미지별 예측 확률 그룹화
+    # 동일 case의 이미지 예측 결과 그룹화
     for cid, prob, label in records:
         if cid in grouped:
-            if grouped[cid][1] != label:
+            if grouped[cid]["label"] != label:
                 raise ValueError(f'Inconsistent targets for case {cid}')
-            grouped[cid][0].append(prob)
+            grouped[cid]["probs"].append(prob)
         else:
-            grouped[cid] = ([prob], label)
+            grouped[cid] = {
+                "probs": [prob],
+                "label": label
+            }
 
-    # 2. 케이스별 실제 정답 추출
-    y_true = [item[1] for item in grouped.values()]
+    y_true = []
+    y_pred = []
+    case_probs = {}
 
-    # 3. 케이스 내 이미지 예측 확률 평균 후 최종 예측 결정
-    y_pred = [int(np.mean(item[0], axis=0).argmax()) for item in grouped.values()]
+    # 같은 case의 여러 이미지 확률 평균
+    for cid, item in grouped.items():
+        mean_prob = np.mean(item["probs"], axis=0)
 
-    # 4. 케이스 단위 성능 평가
-    return {'cases': len(grouped), 'accuracy': accuracy_score(y_true, y_pred),
-            'macro_f1': f1_score(y_true, y_pred, average='macro', zero_division=0)}
+        true_label = int(item["label"])
+        pred_label = int(mean_prob.argmax())
+
+        y_true.append(true_label)
+        y_pred.append(pred_label)
+        case_probs[cid] = mean_prob
+
+    # Macro F1 계산 기준
+    if evaluation == "validation":
+        macro_labels = list(range(num_classes))
+
+    elif evaluation == "test":
+        macro_labels = sorted(set(y_true))
+
+    else:
+        raise ValueError(
+            "evaluation must be 'validation' or 'test'"
+        )
+
+    accuracy = accuracy_score(
+        y_true,
+        y_pred
+    )
+
+    macro_f1 = f1_score(
+        y_true,
+        y_pred,
+        labels=macro_labels,
+        average="macro",
+        zero_division=0
+    )
+
+    # 클래스별 성능은 전체 33개 출력
+    all_labels = list(range(num_classes))
+
+    precision, recall, f1, support = (
+        precision_recall_fscore_support(
+            y_true,
+            y_pred,
+            labels=all_labels,
+            zero_division=0
+        )
+    )
+
+    return {
+        "cases": len(grouped),
+        "accuracy": accuracy,
+        "macro_f1": macro_f1,
+
+        "macro_labels": macro_labels,
+        "macro_num_classes": len(macro_labels),
+
+        "class_precision": precision,
+        "class_recall": recall,
+        "class_f1": f1,
+        "class_support": support,
+
+        "y_true": np.array(y_true),
+        "y_pred": np.array(y_pred),
+        "case_probs": case_probs
+    }
 
 
 # ========================================
@@ -323,7 +399,11 @@ def main():
         train_loss, _ = run_epoch(model, loaders['train'], device, optimizer)
         # 8-2. Validation 데이터로 성능 검증
         val_loss, val_records = run_epoch(model, loaders['val'], device)
-        metrics = case_metrics(val_records)
+        metrics = case_metrics(
+            val_records,
+            num_classes=len(mapping),
+            evaluation="validation"
+        )
 
         print(
             f'Epoch {epoch}: '
