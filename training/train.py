@@ -425,6 +425,27 @@ def main():
             f'val_macro_f1={metrics["macro_f1"]:.4f}'
         )
 
+        idx_to_class = {v: k for k, v in mapping.items()}
+
+        # 클래스별 평가 결과
+        class_results = pd.DataFrame({
+            "class_name": [
+                idx_to_class[i] for i in range(len(mapping))
+            ],
+            "precision": metrics["class_precision"],
+            "recall": metrics["class_recall"],
+            "f1": metrics["class_f1"],
+            "support": metrics["class_support"]
+        })
+
+        # F1이 낮은 클래스부터 출력
+        print("\n=== 클래스별 성능 ===")
+        print(
+            class_results
+            .sort_values("f1")
+            .to_string(index=False)
+        )
+
         # 8-3. 검증 손실이 개선되면 최적 모델 저장
         if metrics['macro_f1'] > best:
             best, stale = metrics['macro_f1'], 0
