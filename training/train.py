@@ -8,6 +8,7 @@ SCIN 이미지 단독 / 멀티모달 모델 학습 파이프라인
 """
 
 # 실행 옵션(--epochs, --mode 등)을 명령줄에서 전달받기 위한 모듈
+from tqdm.auto import tqdm
 import argparse
 import json
 import random
@@ -73,6 +74,7 @@ class SCINDataset(Dataset):
         self.mapping = mapping
         self.symptom_cols = symptom_cols
         self.transform = transforms.Compose(
+            [transforms.Resize((224, 224))] +
             (
                 [
                     transforms.RandomHorizontalFlip(p=0.5),
@@ -95,9 +97,16 @@ class SCINDataset(Dataset):
     def __getitem__(self, index):
         row = self.df.iloc[index]
 
-        path = Path(str(row['image_path']))
-        if not path.is_absolute():
-            path = self.root / path
+        image_id = str(row['image_id'])
+        split = str(row['split'])
+
+        if split == 'train':
+            path = self.root / 'train_images' / 'original' / f'{image_id}.jpg'
+        elif split == 'validation':
+            path = self.root / 'validation_images' / f'{image_id}.jpg'
+        else:
+            raise ValueError(f'Unsupported split: {split}')
+
         with Image.open(path) as im:
             image = self.transform(im.convert('RGB'))
 
@@ -130,7 +139,11 @@ def run_epoch(model, loader, device, optimizer=None):
     total_numerator, total_denominator = 0., 0.
     records = []
 
-    for batch in loader:
+    for batch in tqdm(
+      loader,
+      desc="Train" if training else "Validation",
+      unit="batch"
+    ):
         image = batch['image'].to(device)
         symptoms = batch['symptoms'].to(device)
         target = batch['target'].to(device)
@@ -286,7 +299,7 @@ def main():
     # 3. 데이터 불러오기
     df = pd.read_csv(
       args.data_csv,
-      dtype={'case_id': str},
+      dtype={'case_id': str, 'image_id': str},
       keep_default_na=True
       )
 
@@ -297,7 +310,7 @@ def main():
     }
     
     # 4. 데이터 유효성 검증
-    required = {'case_id', 'image_path', 'soft_label', 'sample_weight'}
+    required = {'case_id', 'image_id', 'soft_label', 'sample_weight'}
     for split, frame in frames.items():
         if not required.issubset(frame.columns):
             raise ValueError(f'{split} missing {required - set(frame.columns)}')
@@ -391,7 +404,7 @@ def main():
     # 7. 최적 모델 체크포인트 저장 경로 및 Early Stopping 설정
     args.out.mkdir(parents=True, exist_ok=True)
     checkpoint = args.out / f'{args.mode}_best.pt'
-    best, stale = float('inf'), 0
+    best, stale = float('-inf'), 0
 
     # 8. 모델 학습 및 검증
     for epoch in range(1, args.epochs + 1):
@@ -413,8 +426,8 @@ def main():
         )
 
         # 8-3. 검증 손실이 개선되면 최적 모델 저장
-        if val_loss < best:
-            best, stale = val_loss, 0
+        if metrics['macro_f1'] > best:
+            best, stale = metrics['macro_f1'], 0
             torch.save({
                 'model': model.state_dict(),
                 'class_map': mapping,

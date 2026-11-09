@@ -1,7 +1,7 @@
 from torch import nn
 from torchvision import models
 
-# 공통 이미지 특징 추출기
+# 이미지 단독 모델과 멀티모달 모델에서 공통으로 사용하는 특징 추출기
 class ImageBackbone(nn.Module):
     def __init__(self, pretrained=True):
         super().__init__()
@@ -13,8 +13,8 @@ class ImageBackbone(nn.Module):
             )
         )
 
-        self.feature_dim = self.model.classifier[1].in_features
-        self.model.classifier = nn.Identity()
+        self.feature_dim = self.model.classifier[1].in_features # 1280
+        self.model.classifier = nn.Identity() # 기존 분류기 제거
 
     def forward(self, image):
         return self.model(image)
