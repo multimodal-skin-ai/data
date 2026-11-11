@@ -6,14 +6,14 @@ class ImageBackbone(nn.Module):
     def __init__(self, pretrained=True):
         super().__init__()
 
-        self.model = models.efficientnet_b0(
+        self.model = models.efficientnet_b3(
             weights=(
-                models.EfficientNet_B0_Weights.DEFAULT
+                models.EfficientNet_B3_Weights.DEFAULT
                 if pretrained else None
             )
         )
 
-        self.feature_dim = self.model.classifier[1].in_features # 1280
+        self.feature_dim = self.model.classifier[1].in_features # 1536
         self.model.classifier = nn.Identity() # 기존 분류기 제거
 
     def forward(self, image):

@@ -74,7 +74,7 @@ class SCINDataset(Dataset):
         self.mapping = mapping
         self.symptom_cols = symptom_cols
         self.transform = transforms.Compose(
-            [transforms.Resize((224, 224))] +
+            [transforms.Resize((300, 300))] +
             (
                 [
                     transforms.RandomHorizontalFlip(p=0.5),
