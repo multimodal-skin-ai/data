@@ -441,8 +441,13 @@ def main():
     # 6-3. Optimizer 설정
     optimizer = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
-        lr=args.lr
-        )
+        lr=args.lr,
+        weight_decay=1e-4
+    )
+
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=args.epochs, eta_min=1e-6
+    )
 
     # 7. 최적 모델 체크포인트 저장 경로 및 Early Stopping 설정
     args.out.mkdir(parents=True, exist_ok=True)
@@ -453,6 +458,7 @@ def main():
     for epoch in range(1, args.epochs + 1):
         # 8-1. Train 데이터로 모델 학습
         train_loss, _ = run_epoch(model, loaders['train'], device, optimizer, class_weights=class_weights)
+        scheduler.step()
         # 8-2. Validation 데이터로 성능 검증
         val_loss, val_records = run_epoch(model, loaders['val'], device)
         metrics = case_metrics(
