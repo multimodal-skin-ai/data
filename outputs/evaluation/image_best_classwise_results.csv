@@ -1,0 +1,133 @@
+﻿model,condition,class_index,class_name,precision,recall,f1,cases,status
+image,original,0,Eczema,0.2765957446808511,0.43333333333333335,0.33766233766233766,60,Available
+image,original,1,Allergic Contact Dermatitis,0.4,0.21621621621621623,0.2807017543859649,37,Available
+image,original,2,Urticaria,0.36363636363636365,0.42105263157894735,0.3902439024390244,19,Available
+image,original,3,Insect Bite,0.25,0.2,0.2222222222222222,20,Available
+image,original,4,Folliculitis,0.4166666666666667,0.23809523809523808,0.30303030303030304,21,Available
+image,original,5,Psoriasis,0.3333333333333333,0.07692307692307693,0.125,13,Available
+image,original,6,Tinea,0.18181818181818182,0.2,0.19047619047619047,10,Available
+image,original,7,Herpes Simplex,0.0,0.0,0.0,4,Available
+image,original,8,Acne,0.5,0.8571428571428571,0.631578947368421,7,Available
+image,original,9,CD - Contact dermatitis,0.0,0.0,0.0,5,Available
+image,original,10,Herpes Zoster,0.4444444444444444,0.5,0.47058823529411764,8,Available
+image,original,11,Irritant Contact Dermatitis,0.0,0.0,0.0,4,Available
+image,original,12,Pigmented purpuric eruption,0.0,0.0,0.0,4,Available
+image,original,13,Tinea Versicolor,0.4,0.4,0.4,5,Available
+image,original,14,Pityriasis rosea,0.5,0.5,0.5,4,Available
+image,original,15,"Acute dermatitis, NOS",0.5,0.1,0.16666666666666666,10,Available
+image,original,16,Impetigo,0.5,0.25,0.3333333333333333,4,Available
+image,original,17,Keratosis pilaris,0.3333333333333333,0.5,0.4,2,Available
+image,original,18,O/E - ecchymoses present,1.0,1.0,1.0,1,Available
+image,original,19,Lichen Simplex Chronicus,0.14285714285714285,0.3333333333333333,0.2,3,Available
+image,original,20,Rosacea,0.25,0.5,0.3333333333333333,2,Available
+image,original,21,Leukocytoclastic Vasculitis,0.5,0.5,0.5,2,Available
+image,original,22,Granuloma annulare,0.0,0.0,0.0,2,Available
+image,original,23,Drug Rash,0.2,0.3333333333333333,0.25,3,Available
+image,original,24,Prurigo nodularis,0.5,0.25,0.3333333333333333,4,Available
+image,original,25,Verruca vulgaris,0.0,0.0,0.0,1,Available
+image,original,26,Lichen planus/lichenoid eruption,0.0,0.0,0.0,2,Available
+image,original,27,Molluscum Contagiosum,0.0,0.0,0.0,1,Available
+image,original,28,Acute and chronic dermatitis,0.0,0.0,0.0,5,Available
+image,original,29,Viral Exanthem,,,,0,No test samples
+image,original,30,Purpura,,,,0,No test samples
+image,original,31,Hypersensitivity,0.0,0.0,0.0,4,Available
+image,original,32,other,0.16666666666666666,0.18181818181818182,0.17391304347826086,11,Available
+image,lowres,0,Eczema,0.26956521739130435,0.5166666666666667,0.35428571428571426,60,Available
+image,lowres,1,Allergic Contact Dermatitis,0.26666666666666666,0.10810810810810811,0.15384615384615385,37,Available
+image,lowres,2,Urticaria,0.25,0.2631578947368421,0.2564102564102564,19,Available
+image,lowres,3,Insect Bite,0.2857142857142857,0.2,0.23529411764705882,20,Available
+image,lowres,4,Folliculitis,0.42857142857142855,0.2857142857142857,0.34285714285714286,21,Available
+image,lowres,5,Psoriasis,0.75,0.23076923076923078,0.35294117647058826,13,Available
+image,lowres,6,Tinea,0.2222222222222222,0.2,0.21052631578947367,10,Available
+image,lowres,7,Herpes Simplex,0.0,0.0,0.0,4,Available
+image,lowres,8,Acne,0.5833333333333334,1.0,0.7368421052631579,7,Available
+image,lowres,9,CD - Contact dermatitis,0.0,0.0,0.0,5,Available
+image,lowres,10,Herpes Zoster,0.5555555555555556,0.625,0.5882352941176471,8,Available
+image,lowres,11,Irritant Contact Dermatitis,0.0,0.0,0.0,4,Available
+image,lowres,12,Pigmented purpuric eruption,0.0,0.0,0.0,4,Available
+image,lowres,13,Tinea Versicolor,0.25,0.2,0.2222222222222222,5,Available
+image,lowres,14,Pityriasis rosea,0.5,0.5,0.5,4,Available
+image,lowres,15,"Acute dermatitis, NOS",0.0,0.0,0.0,10,Available
+image,lowres,16,Impetigo,0.0,0.0,0.0,4,Available
+image,lowres,17,Keratosis pilaris,1.0,0.5,0.6666666666666666,2,Available
+image,lowres,18,O/E - ecchymoses present,0.0,0.0,0.0,1,Available
+image,lowres,19,Lichen Simplex Chronicus,0.25,0.3333333333333333,0.2857142857142857,3,Available
+image,lowres,20,Rosacea,0.3333333333333333,0.5,0.4,2,Available
+image,lowres,21,Leukocytoclastic Vasculitis,0.5,0.5,0.5,2,Available
+image,lowres,22,Granuloma annulare,0.0,0.0,0.0,2,Available
+image,lowres,23,Drug Rash,0.0,0.0,0.0,3,Available
+image,lowres,24,Prurigo nodularis,0.0,0.0,0.0,4,Available
+image,lowres,25,Verruca vulgaris,0.0,0.0,0.0,1,Available
+image,lowres,26,Lichen planus/lichenoid eruption,0.0,0.0,0.0,2,Available
+image,lowres,27,Molluscum Contagiosum,0.0,0.0,0.0,1,Available
+image,lowres,28,Acute and chronic dermatitis,0.0,0.0,0.0,5,Available
+image,lowres,29,Viral Exanthem,,,,0,No test samples
+image,lowres,30,Purpura,,,,0,No test samples
+image,lowres,31,Hypersensitivity,0.0,0.0,0.0,4,Available
+image,lowres,32,other,0.09090909090909091,0.09090909090909091,0.09090909090909091,11,Available
+image,blur,0,Eczema,0.2857142857142857,0.5333333333333333,0.37209302325581395,60,Available
+image,blur,1,Allergic Contact Dermatitis,0.2857142857142857,0.16216216216216217,0.20689655172413793,37,Available
+image,blur,2,Urticaria,0.21739130434782608,0.2631578947368421,0.23809523809523808,19,Available
+image,blur,3,Insect Bite,0.2,0.15,0.17142857142857143,20,Available
+image,blur,4,Folliculitis,0.6,0.2857142857142857,0.3870967741935484,21,Available
+image,blur,5,Psoriasis,0.5,0.07692307692307693,0.13333333333333333,13,Available
+image,blur,6,Tinea,0.3,0.3,0.3,10,Available
+image,blur,7,Herpes Simplex,0.0,0.0,0.0,4,Available
+image,blur,8,Acne,0.5,1.0,0.6666666666666666,7,Available
+image,blur,9,CD - Contact dermatitis,0.0,0.0,0.0,5,Available
+image,blur,10,Herpes Zoster,0.4,0.5,0.4444444444444444,8,Available
+image,blur,11,Irritant Contact Dermatitis,0.0,0.0,0.0,4,Available
+image,blur,12,Pigmented purpuric eruption,0.0,0.0,0.0,4,Available
+image,blur,13,Tinea Versicolor,0.25,0.2,0.2222222222222222,5,Available
+image,blur,14,Pityriasis rosea,0.4,0.5,0.4444444444444444,4,Available
+image,blur,15,"Acute dermatitis, NOS",1.0,0.1,0.18181818181818182,10,Available
+image,blur,16,Impetigo,0.0,0.0,0.0,4,Available
+image,blur,17,Keratosis pilaris,0.0,0.0,0.0,2,Available
+image,blur,18,O/E - ecchymoses present,0.0,0.0,0.0,1,Available
+image,blur,19,Lichen Simplex Chronicus,0.3333333333333333,0.3333333333333333,0.3333333333333333,3,Available
+image,blur,20,Rosacea,0.3333333333333333,0.5,0.4,2,Available
+image,blur,21,Leukocytoclastic Vasculitis,0.0,0.0,0.0,2,Available
+image,blur,22,Granuloma annulare,0.0,0.0,0.0,2,Available
+image,blur,23,Drug Rash,0.0,0.0,0.0,3,Available
+image,blur,24,Prurigo nodularis,0.5,0.25,0.3333333333333333,4,Available
+image,blur,25,Verruca vulgaris,0.0,0.0,0.0,1,Available
+image,blur,26,Lichen planus/lichenoid eruption,0.0,0.0,0.0,2,Available
+image,blur,27,Molluscum Contagiosum,0.0,0.0,0.0,1,Available
+image,blur,28,Acute and chronic dermatitis,0.0,0.0,0.0,5,Available
+image,blur,29,Viral Exanthem,,,,0,No test samples
+image,blur,30,Purpura,,,,0,No test samples
+image,blur,31,Hypersensitivity,0.0,0.0,0.0,4,Available
+image,blur,32,other,0.1,0.09090909090909091,0.09523809523809523,11,Available
+image,dark,0,Eczema,0.24731182795698925,0.38333333333333336,0.3006535947712418,60,Available
+image,dark,1,Allergic Contact Dermatitis,0.26666666666666666,0.10810810810810811,0.15384615384615385,37,Available
+image,dark,2,Urticaria,0.25,0.3157894736842105,0.27906976744186046,19,Available
+image,dark,3,Insect Bite,0.36363636363636365,0.2,0.25806451612903225,20,Available
+image,dark,4,Folliculitis,0.3333333333333333,0.23809523809523808,0.2777777777777778,21,Available
+image,dark,5,Psoriasis,0.6666666666666666,0.15384615384615385,0.25,13,Available
+image,dark,6,Tinea,0.18181818181818182,0.2,0.19047619047619047,10,Available
+image,dark,7,Herpes Simplex,0.0,0.0,0.0,4,Available
+image,dark,8,Acne,0.6666666666666666,0.8571428571428571,0.75,7,Available
+image,dark,9,CD - Contact dermatitis,0.0,0.0,0.0,5,Available
+image,dark,10,Herpes Zoster,0.4444444444444444,0.5,0.47058823529411764,8,Available
+image,dark,11,Irritant Contact Dermatitis,0.0,0.0,0.0,4,Available
+image,dark,12,Pigmented purpuric eruption,0.0,0.0,0.0,4,Available
+image,dark,13,Tinea Versicolor,0.2857142857142857,0.4,0.3333333333333333,5,Available
+image,dark,14,Pityriasis rosea,0.4,0.5,0.4444444444444444,4,Available
+image,dark,15,"Acute dermatitis, NOS",1.0,0.1,0.18181818181818182,10,Available
+image,dark,16,Impetigo,0.5,0.25,0.3333333333333333,4,Available
+image,dark,17,Keratosis pilaris,0.3333333333333333,0.5,0.4,2,Available
+image,dark,18,O/E - ecchymoses present,1.0,1.0,1.0,1,Available
+image,dark,19,Lichen Simplex Chronicus,0.2,0.3333333333333333,0.25,3,Available
+image,dark,20,Rosacea,0.25,0.5,0.3333333333333333,2,Available
+image,dark,21,Leukocytoclastic Vasculitis,0.5,0.5,0.5,2,Available
+image,dark,22,Granuloma annulare,0.0,0.0,0.0,2,Available
+image,dark,23,Drug Rash,0.0,0.0,0.0,3,Available
+image,dark,24,Prurigo nodularis,0.25,0.25,0.25,4,Available
+image,dark,25,Verruca vulgaris,0.0,0.0,0.0,1,Available
+image,dark,26,Lichen planus/lichenoid eruption,0.0,0.0,0.0,2,Available
+image,dark,27,Molluscum Contagiosum,0.0,0.0,0.0,1,Available
+image,dark,28,Acute and chronic dermatitis,0.0,0.0,0.0,5,Available
+image,dark,29,Viral Exanthem,,,,0,No test samples
+image,dark,30,Purpura,,,,0,No test samples
+image,dark,31,Hypersensitivity,0.0,0.0,0.0,4,Available
+image,dark,32,other,0.14285714285714285,0.18181818181818182,0.16,11,Available

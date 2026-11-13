@@ -104,6 +104,8 @@ class SCINDataset(Dataset):
             path = self.root / 'train_images' / 'original' / f'{image_id}.jpg'
         elif split == 'validation':
             path = self.root / 'validation_images' / f'{image_id}.jpg'
+        elif split == "test":
+            path = Path(str(row["image_path"]))
         else:
             raise ValueError(f'Unsupported split: {split}')
 
