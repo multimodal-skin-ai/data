@@ -8,6 +8,7 @@ SCIN 이미지 단독 / 멀티모달 모델 학습 파이프라인
 """
 
 # 실행 옵션(--epochs, --mode 등)을 명령줄에서 전달받기 위한 모듈
+from tqdm.auto import tqdm
 import argparse
 import json
 import random
@@ -73,6 +74,7 @@ class SCINDataset(Dataset):
         self.mapping = mapping
         self.symptom_cols = symptom_cols
         self.transform = transforms.Compose(
+            [transforms.Resize((300, 300))] +
             (
                 [
                     transforms.RandomHorizontalFlip(p=0.5),
@@ -95,9 +97,18 @@ class SCINDataset(Dataset):
     def __getitem__(self, index):
         row = self.df.iloc[index]
 
-        path = Path(str(row['image_path']))
-        if not path.is_absolute():
-            path = self.root / path
+        image_id = str(row['image_id'])
+        split = str(row['split'])
+
+        if split == 'train':
+            path = self.root / 'train_images' / 'original' / f'{image_id}.jpg'
+        elif split == 'validation':
+            path = self.root / 'validation_images' / f'{image_id}.jpg'
+        elif split == "test":
+            path = Path(str(row["image_path"]))
+        else:
+            raise ValueError(f'Unsupported split: {split}')
+
         with Image.open(path) as im:
             image = self.transform(im.convert('RGB'))
 
@@ -115,14 +126,48 @@ class SCINDataset(Dataset):
                 'case_id': str(row['case_id'])}
 
 
+# 클래스 가중치 계산
+def compute_class_weights(train_df, mapping):
+    soft_labels = np.stack([
+        parse_soft(value, mapping).numpy()
+        for value in train_df["soft_label"]
+    ])
+
+    sample_weights = train_df["sample_weight"].to_numpy(
+        dtype=np.float32
+    )
+
+    # 실제 이미지 단위 학습 기준
+    class_mass = (
+        soft_labels * sample_weights[:, None]
+    ).sum(axis=0)
+
+    class_weights = 1.0 / np.sqrt(class_mass + 1e-8)
+    class_weights = class_weights / class_weights.mean()
+    class_weights = np.clip(class_weights, 0.5, 3.0)
+
+    return torch.tensor(class_weights, dtype=torch.float32)
+
+
 # Soft Label과 Sample weight를 반영한 Cross Entropy
-def weighted_soft_ce(logits, target, weights):
-    per_sample = -(target * torch.log_softmax(logits, dim=1)).sum(dim=1)  # 이미지별 Loss
-    return (per_sample * weights).sum() / weights.sum().clamp_min(1e-8)  # Sample Weight 적용
+def weighted_soft_ce(logits,target, weights,class_weights=None):
+    log_probs = torch.log_softmax(logits, dim=1)
+
+    if class_weights is not None:
+        per_sample = -(
+            target * log_probs * class_weights.unsqueeze(0)
+        ).sum(dim=1)
+    else:
+        per_sample = -(target * log_probs).sum(dim=1)
+
+    return (
+        (per_sample * weights).sum()
+        / weights.sum().clamp_min(1e-8)
+    )
 
 
 # 한 Epoch 동안 학습 또는 검증 수행
-def run_epoch(model, loader, device, optimizer=None):
+def run_epoch(model, loader, device, optimizer=None, class_weights=None):
     # Optimizer 존재 여부로 학습/검증 모드 구분
     training = optimizer is not None
     model.train(training)
@@ -130,7 +175,11 @@ def run_epoch(model, loader, device, optimizer=None):
     total_numerator, total_denominator = 0., 0.
     records = []
 
-    for batch in loader:
+    for batch in tqdm(
+      loader,
+      desc="Train" if training else "Validation",
+      unit="batch"
+    ):
         image = batch['image'].to(device)
         symptoms = batch['symptoms'].to(device)
         target = batch['target'].to(device)
@@ -139,7 +188,7 @@ def run_epoch(model, loader, device, optimizer=None):
         # 모델 예측 및 Soft Label 기반 Loss 계산
         with torch.set_grad_enabled(training):
             logits = model(image, symptoms)
-            loss = weighted_soft_ce(logits, target, weight)
+            loss = weighted_soft_ce(logits, target, weight, class_weights=class_weights)
 
             if training:  # 학습 모드일 때만 역전파 및 가중치 업데이트
                 optimizer.zero_grad()  
@@ -277,6 +326,7 @@ def main():
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--out', type=Path, default=Path('outputs'))
     parser.add_argument('--no-pretrained', action='store_true')
+    parser.add_argument('--class-weighting', action='store_true')
     args = parser.parse_args()
 
     # 2. 실험 시드를 고정 및 클래스 인덱스 불러오기
@@ -286,7 +336,7 @@ def main():
     # 3. 데이터 불러오기
     df = pd.read_csv(
       args.data_csv,
-      dtype={'case_id': str},
+      dtype={'case_id': str, 'image_id': str},
       keep_default_na=True
       )
 
@@ -297,7 +347,7 @@ def main():
     }
     
     # 4. 데이터 유효성 검증
-    required = {'case_id', 'image_path', 'soft_label', 'sample_weight'}
+    required = {'case_id', 'image_id', 'soft_label', 'sample_weight'}
     for split, frame in frames.items():
         if not required.issubset(frame.columns):
             raise ValueError(f'{split} missing {required - set(frame.columns)}')
@@ -348,6 +398,14 @@ def main():
     # 6. 모델 및 학습 환경 설정
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # 6-0. 클래스 불균형 보정을 위한 가중치 설정
+    class_weights = None
+    if args.class_weighting:
+        class_weights = compute_class_weights(
+            frames["train"],
+            mapping
+        ).to(device)
+
     # 6-1. 실행 모드에 따라 이미지 단독 또는 멀티모달 모델 생성
     if args.mode == 'image':
       model = ImageClassifier(
@@ -385,18 +443,24 @@ def main():
     # 6-3. Optimizer 설정
     optimizer = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
-        lr=args.lr
-        )
+        lr=args.lr,
+        weight_decay=1e-4
+    )
+
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=args.epochs, eta_min=1e-6
+    )
 
     # 7. 최적 모델 체크포인트 저장 경로 및 Early Stopping 설정
     args.out.mkdir(parents=True, exist_ok=True)
     checkpoint = args.out / f'{args.mode}_best.pt'
-    best, stale = float('inf'), 0
+    best, stale = float('-inf'), 0
 
     # 8. 모델 학습 및 검증
     for epoch in range(1, args.epochs + 1):
         # 8-1. Train 데이터로 모델 학습
-        train_loss, _ = run_epoch(model, loaders['train'], device, optimizer)
+        train_loss, _ = run_epoch(model, loaders['train'], device, optimizer, class_weights=class_weights)
+        scheduler.step()
         # 8-2. Validation 데이터로 성능 검증
         val_loss, val_records = run_epoch(model, loaders['val'], device)
         metrics = case_metrics(
@@ -412,9 +476,30 @@ def main():
             f'val_macro_f1={metrics["macro_f1"]:.4f}'
         )
 
+        idx_to_class = {v: k for k, v in mapping.items()}
+
+        # 클래스별 평가 결과
+        class_results = pd.DataFrame({
+            "class_name": [
+                idx_to_class[i] for i in range(len(mapping))
+            ],
+            "precision": metrics["class_precision"],
+            "recall": metrics["class_recall"],
+            "f1": metrics["class_f1"],
+            "support": metrics["class_support"]
+        })
+
+        # F1이 낮은 클래스부터 출력
+        print("\n=== 클래스별 성능 ===")
+        print(
+            class_results
+            .sort_values("f1")
+            .to_string(index=False)
+        )
+
         # 8-3. 검증 손실이 개선되면 최적 모델 저장
-        if val_loss < best:
-            best, stale = val_loss, 0
+        if metrics['macro_f1'] > best:
+            best, stale = metrics['macro_f1'], 0
             torch.save({
                 'model': model.state_dict(),
                 'class_map': mapping,
