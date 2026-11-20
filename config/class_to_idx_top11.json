@@ -1,0 +1,13 @@
+{
+  "Eczema": 0,
+  "Allergic Contact Dermatitis": 1,
+  "Urticaria": 2,
+  "Insect Bite": 3,
+  "Folliculitis": 4,
+  "Psoriasis": 5,
+  "Tinea": 6,
+  "Herpes Simplex": 7,
+  "Acne": 8,
+  "CD - Contact dermatitis": 9,
+  "other": 10
+}
