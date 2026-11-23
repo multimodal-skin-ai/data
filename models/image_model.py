@@ -1,11 +1,11 @@
 from torch import nn
-from .backbone import ImageBackbone
+from .backbones.efficientnet import EfficientNetBackbone
 
 class ImageClassifier(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super().__init__()
 
-        self.backbone = ImageBackbone(pretrained)
+        self.backbone = EfficientNetBackbone(pretrained)
 
         self.head = nn.Sequential(
             nn.Dropout(0.2),

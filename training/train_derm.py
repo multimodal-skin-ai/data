@@ -10,6 +10,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
 from training.train import parse_soft, weighted_soft_ce, seed_everything, case_metrics, load_class_to_idx
+from models.backbones.derm_foundation import DermClassifier
 
 
 # 이미지 자체 대신 Derm Foundation이 미리 추출한 임베딩을 학습 샘플로 사용
@@ -26,23 +27,6 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, i):
         return {"image": self.embeddings[i], "target": self.targets[i],
                 "weight": self.weights[i], "case_id": self.case_ids[i]}
-
-
-
-# 사전 추출된 6144차원 특징을 11개 클래스의 예측 점수(logits)로 변환하는 MLP
-class DermClassifier(nn.Module):
-    def __init__(self, input_dim, num_classes=11):
-        super().__init__()
-        self.classifier = nn.Sequential(
-            nn.LayerNorm(input_dim),
-            nn.Linear(input_dim, 256),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(256, num_classes)
-        )
-
-    def forward(self, image):
-        return self.classifier(image)
 
 
 # 기존 33차원 Soft Label 불러오기

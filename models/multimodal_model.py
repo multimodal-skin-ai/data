@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from .backbone import ImageBackbone
+from .backbones.efficientnet import EfficientNetBackbone
 
 
 class MultimodalClassifier(nn.Module):
@@ -13,7 +13,7 @@ class MultimodalClassifier(nn.Module):
     ):
         super().__init__()
 
-        self.backbone = ImageBackbone(pretrained)
+        self.backbone = EfficientNetBackbone(pretrained)
         self.freeze_backbone = freeze_backbone
 
         if freeze_backbone:
