@@ -38,11 +38,12 @@ def seed_everything(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-def load_class_to_idx(path):
+def load_class_to_idx(path, require_other=True):
     raw = json.loads(Path(path).read_text(encoding='utf-8'))
     mapping = {str(k): int(v) for k, v in raw.items()}
     assert sorted(mapping.values()) == list(range(len(mapping))), 'Class indices must be contiguous from zero'
-    assert 'other' in mapping, 'Class mapping must include other'
+    if require_other:
+        assert 'other' in mapping, 'Class mapping must include other'
     return mapping
 
 
