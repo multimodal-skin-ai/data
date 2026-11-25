@@ -16,7 +16,7 @@ DEFAULT_OUT = Path("/content/drive/MyDrive/데이터사이언스응용/embedding
 # ========================================
 # 1. 이미지 경로
 # ========================================
-def resolve_image_path(root, row):
+def resolve_image_path(root, row, test_condition="original"):
     image_id = str(row["image_id"])
     split = str(row["split"])
 
@@ -25,7 +25,7 @@ def resolve_image_path(root, row):
     elif split == "validation":
         path = root / "validation_images" / f"{image_id}.jpg"
     elif split == "test":
-        path = root / "test_images" / "original" / f"{image_id}.jpg"
+        path = root / "test_images" / test_condition / f"{image_id}.jpg"
     else:
         raise ValueError(f"Unsupported split: {split}")
 
@@ -64,17 +64,13 @@ def encode_image(path):
 # ========================================
 # 3. 전체 이미지 경로 검증
 # ========================================
-def validate_paths(df, root):
+def validate_paths(df, root, test_condition="original"):
     paths = []
     missing = []
 
-    for _, row in tqdm(
-        df.iterrows(),
-        total=len(df),
-        desc="Checking paths"
-    ):
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Checking paths"):
         try:
-            paths.append(resolve_image_path(root, row))
+            paths.append(resolve_image_path(root, row, test_condition))
         except FileNotFoundError as e:
             missing.append(str(e))
             paths.append(None)
@@ -83,10 +79,7 @@ def validate_paths(df, root):
         print("Missing image examples:")
         for path in missing[:10]:
             print(path)
-
-        raise FileNotFoundError(
-            f"{len(missing)} images are missing"
-        )
+        raise FileNotFoundError(f"{len(missing)} images are missing")
 
     print(f"All {len(paths)} image paths are valid.")
     return paths
@@ -164,6 +157,11 @@ def main():
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--save-every", type=int, default=20)
+    parser.add_argument(
+        "--test-condition",
+        choices=["original", "lowres", "blur", "dark"],
+        default="original"
+    )
     args = parser.parse_args()
 
     if args.batch_size < 1 or args.save_every < 1:
@@ -191,6 +189,12 @@ def main():
             "CSV contains missing case_id, image_id or split"
         )
 
+    if args.test_condition != "original":
+        df = df[df["split"] == "test"].reset_index(drop=True)
+
+        if df.empty:
+            raise ValueError("Test 데이터가 없습니다.")
+
     case_ids = df["case_id"].to_numpy(dtype=str)
     image_ids = df["image_id"].to_numpy(dtype=str)
     splits = df["split"].astype(str).to_numpy()
@@ -198,7 +202,7 @@ def main():
     # ========================================
     # 6-2. 이미지 경로 검증
     # ========================================
-    paths = validate_paths(df, args.image_root)
+    paths = validate_paths(df, args.image_root, args.test_condition)
 
     # ========================================
     # 6-3. 저장 경로 설정

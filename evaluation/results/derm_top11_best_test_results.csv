@@ -1,0 +1,2 @@
+﻿model,checkpoint,cases,images,accuracy,macro_f1,macro_num_classes
+derm_foundation,derm_top11_best,195,413,0.5538461538461539,0.4866260002671089,11
