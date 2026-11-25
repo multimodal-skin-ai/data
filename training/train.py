@@ -409,16 +409,16 @@ def main():
     # 6-1. 실행 모드에 따라 이미지 단독 또는 멀티모달 모델 생성
     if args.mode == 'image':
       model = ImageClassifier(
-      num_classes=len(mapping),
-      pretrained=not args.no_pretrained
+          num_classes=len(mapping),
+          pretrained=not args.no_pretrained
       )
 
     else:
       model = MultimodalClassifier(
-      num_classes=len(mapping),
-      symptom_dim=len(symptom_cols),
-      pretrained=False,
-      freeze_backbone=True
+            num_classes=len(mapping),
+            symptom_dim=len(symptom_cols),
+            pretrained=False,
+            freeze_backbone=True
       )
 
     model = model.to(device)
