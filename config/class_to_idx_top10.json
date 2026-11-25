@@ -1,0 +1,12 @@
+{
+    "Eczematous Dermatitis": 0,
+    "Contact Dermatitis": 1,
+    "Urticaria": 2,
+    "Insect Bite": 3,
+    "Follicular Inflammation": 4,
+    "Psoriasis": 5,
+    "Tinea": 6,
+    "Herpes Simplex": 7,
+    "Herpes Zoster": 8,
+    "Acne": 9
+}
