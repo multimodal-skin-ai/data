@@ -10,7 +10,8 @@ from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_su
 from training.train import weighted_soft_ce, seed_everything, load_class_to_idx
 from models.backbones.derm_foundation import DermClassifier
 
-# Dataset: 사전 추출된 임베딩 사용
+
+# 사전 추출된 임베딩 사용
 class EmbeddingDataset(Dataset):
     def __init__(self, embeddings, targets, weights, hard_labels, case_ids):
         self.embeddings = torch.from_numpy(np.ascontiguousarray(embeddings, dtype=np.float32))
@@ -26,7 +27,6 @@ class EmbeddingDataset(Dataset):
         return {'image': self.embeddings[i], 'target': self.targets[i], 'weight': self.weights[i], 'hard_label': self.hard_labels[i], 'case_id': self.case_ids[i]}
 
 
-# 임베딩 ID 매핑
 def load_embeddings(path):
     with np.load(path, allow_pickle=True) as data:
         required = {'embeddings', 'case_ids', 'image_ids'}
@@ -56,6 +56,7 @@ def load_embeddings(path):
 
 # 전처리 데이터 로딩 및 검증
 def load_split(data_dir, split, embeddings, embedding_map, num_classes):
+    # Manifest에는 이미지 식별자, NPZ에는 학습에 필요한 배열이 저장됨
     manifest_path = data_dir / f'{split}_manifest.csv'
     arrays_path = data_dir / f'{split}_arrays.npz'
 
@@ -171,11 +172,13 @@ def train_one_epoch(model, loader, optimizer, device):
         image = batch['image'].to(device)
         target = batch['target'].to(device)
         weight = batch['weight'].to(device)
+
         optimizer.zero_grad()
         logits = model(image)
         loss = weighted_soft_ce(logits, target, weight, class_weights=None)
         if not torch.isfinite(loss):
             raise ValueError('학습 중 Loss가 NaN 또는 Inf입니다.')
+
         loss.backward()
         optimizer.step()
         weight_sum = weight.sum().item()
@@ -198,27 +201,34 @@ def evaluate(model, loader, device, num_classes):
         weight = batch['weight'].to(device)
         logits = model(image)
         loss = weighted_soft_ce(logits, target, weight, class_weights=None)
+
         weight_sum = weight.sum().item()
         total_numerator += loss.item() * weight_sum
         total_denominator += weight_sum
+
         probs = torch.softmax(logits, dim=1).cpu().numpy()
         hard_labels = batch['hard_label'].cpu().numpy()
         soft_targets = batch['target'].cpu().numpy()
+
         for cid, p, h, s in zip(batch['case_id'], probs, hard_labels, soft_targets):
             case_probs[cid].append(p)
             case_hard_labels[cid] = int(h)
             case_soft_targets[cid] = s
+
     all_case_ids = list(case_probs.keys())
     all_probs = np.stack([np.mean(case_probs[cid], axis=0) for cid in all_case_ids])
     all_hard_labels = np.array([case_hard_labels[cid] for cid in all_case_ids])
     all_soft_targets = np.stack([case_soft_targets[cid] for cid in all_case_ids])
+
     valid_mask = all_hard_labels >= 0
     if not valid_mask.any():
         raise ValueError('평가 가능한 Hard Label 케이스가 없습니다.')
     y_true = all_hard_labels[valid_mask]
     y_probs = all_probs[valid_mask]
+    
     y_pred = y_probs.argmax(axis=1)
     labels = list(range(num_classes))
+
     accuracy = accuracy_score(y_true, y_pred)
     macro_f1 = f1_score(y_true, y_pred, labels=labels, average='macro', zero_division=0)
     ranked_predictions = np.argsort(-y_probs, axis=1, kind='stable')
@@ -229,6 +239,7 @@ def evaluate(model, loader, device, num_classes):
     all_ranked = np.argsort(-all_probs, axis=1, kind='stable')
     soft_top3_mass = np.take_along_axis(all_soft_targets, all_ranked[:, :3], axis=1).sum(axis=1).mean()
     soft_top5_mass = np.take_along_axis(all_soft_targets, all_ranked[:, :5], axis=1).sum(axis=1).mean()
+    
     precision, recall, class_f1, support = precision_recall_fscore_support(y_true, y_pred, labels=labels, zero_division=0)
     return {'loss': total_numerator / max(total_denominator, 1e-08), 'accuracy': float(accuracy), 'macro_f1': float(macro_f1), 'top3_accuracy': float(top3_accuracy), 'top5_accuracy': float(top5_accuracy), 'soft_top3_mass': float(soft_top3_mass), 'soft_top5_mass': float(soft_top5_mass), 'class_precision': precision, 'class_recall': recall, 'class_f1': class_f1, 'class_support': support, 'total_cases': int(len(all_case_ids)), 'evaluated_cases': int(valid_mask.sum()), 'excluded_cases': int((~valid_mask).sum())}
 
@@ -265,7 +276,6 @@ def main():
     parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--out', type=Path, default=Path('outputs/derm_top10'))
-    parser.add_argument('--evaluate-test', action='store_true')
     args = parser.parse_args()
 
     if min(args.epochs, args.batch_size, args.patience) <= 0:
@@ -311,7 +321,7 @@ def main():
     datasets = {}
     split_cases = {}
 
-    for split in ['train', 'validation', 'test']:
+    for split in ['train', 'validation']:
         dataset, cases = load_split(
             data_dir=args.data_dir,
             split=split,
@@ -322,6 +332,13 @@ def main():
 
         datasets[split] = dataset
         split_cases[split] = cases
+
+    # Test 데이터는 학습에 사용하지 않고 case_id만 읽어 데이터 누수 검증
+    split_cases['test'] = set(pd.read_csv(
+        args.data_dir / 'test_manifest.csv',
+        usecols=['case_id'],
+        dtype={'case_id': str}
+    )['case_id'])
 
     # 데이터 누수 검증
     for split_a, split_b in [
@@ -345,12 +362,6 @@ def main():
 
     val_loader = DataLoader(
         datasets['validation'],
-        batch_size=args.batch_size,
-        shuffle=False
-    )
-
-    test_loader = DataLoader(
-        datasets['test'],
         batch_size=args.batch_size,
         shuffle=False
     )
@@ -444,18 +455,6 @@ def main():
     print_class_results(best_metrics, class_map)
     print(f'\nCheckpoint: {checkpoint}')
 
-    # Test 데이터셋 평가
-    if args.evaluate_test:
-        saved = torch.load(checkpoint, map_location=device)
-        model.load_state_dict(saved['model'])
-
-        test_metrics = evaluate(
-            model, test_loader, device, num_classes
-        )
-
-        print('\n=== Test Results ===')
-        print_metrics(test_metrics)
-        print_class_results(test_metrics, class_map)
 
 
 if __name__ == '__main__':
